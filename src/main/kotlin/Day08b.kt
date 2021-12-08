@@ -1,112 +1,120 @@
 import java.io.File
-import java.lang.Math.abs
 
 data class Row(val inputs: List<String>, val outputs: List<String>)
 
 fun calculateOutput(row: Row): Int {
 
-    var top = listOf("a", "b", "c", "d", "e", "f", "g")
-    var topLeft = listOf("a", "b", "c", "d", "e", "f", "g")
-    var topRight = listOf("a", "b", "c", "d", "e", "f", "g")
-    var middle = listOf("a", "b", "c", "d", "e", "f", "g")
-    var bottomLeft = listOf("a", "b", "c", "d", "e", "f", "g")
-    var bottomRight = listOf("a", "b", "c", "d", "e", "f", "g")
-    var bottom = listOf("a", "b", "c", "d", "e", "f", "g")
+    val allChars = listOf("a", "b", "c", "d", "e", "f", "g")
 
-    var rightSide = listOf<String>()
-    var topLeftMiddle = listOf<String>()
+    var top = allChars
+    var topLeft = allChars
+    var topRight = allChars
+    var middle = allChars
+    var bottomLeft = allChars
+    var bottomRight = allChars
+    var bottom = allChars
+
+    var rightSidePair = listOf<String>()
+    var topLeftMiddlePair = listOf<String>()
 
     val sortedInputs = row.inputs.sortedBy { it.length }
 
     for (input in sortedInputs) {
         when (input.length) {
             2 -> {
+                // String must be ONE
+                // Filter the right side segments to the two possible options
                 topRight = topRight.filter { x -> input.contains(x) }
                 bottomRight = bottomRight.filter { x -> input.contains(x) }
             }
             3 -> {
+                // String must be SEVEN
+                // The top segment can be identified from the difference between the SEVEN input and the right side.
                 top = input.toList().map { x -> x + "" }.filterNot { x -> topRight.contains(x) }
+
+                // All other segments can be filtered to the 4 remaining possible characters.
                 topLeft = topLeft.filterNot { x -> top.contains(x) || topRight.contains(x) }
                 middle = middle.filterNot { x -> top.contains(x) || topRight.contains(x) }
                 bottomLeft = bottomLeft.filterNot { x -> top.contains(x) || topRight.contains(x) }
                 bottom = bottom.filterNot { x -> top.contains(x) || topRight.contains(x) }
             }
             4 -> {
+                // String must be FOUR
+                // The top left and middle can be further filtered to two possible values based on the input.
                 topLeft = input.toList().map { x -> x + "" }.filter { x -> topLeft.contains(x) }
                 middle = input.toList().map { x -> x + "" }.filter { x -> middle.contains(x) }
 
+                // The bottom left and bottom therefore can also be filtered to other two possible values.
                 bottomLeft = bottomLeft.filter { x -> !topLeft.contains(x) }
                 bottom = bottom.filter { x -> !topLeft.contains(x) }
 
-                rightSide = topRight
-                topLeftMiddle = topLeft
+                /**
+                 * At this point the situation would look something like this:
+                 *
+                 * top = ["a"]
+                 * topLeft = ["b","c"]
+                 * middle = ["b","c"]
+                 * topRight = ["d","e"]
+                 * bottomRight = ["d","e"]
+                 * bottomLeft = ["f","g"]
+                 * bottom = ["f","g"]
+                 *
+                 */
+
+                rightSidePair = topRight
+                topLeftMiddlePair = topLeft
             }
             5 -> {
-                // Check if both top left chars appear
-                val intersection = topLeftMiddle.intersect(input.toList().map { x -> x + "" })
+                // We can now identify whether a 5 character input is a 2, 3 or 5.
 
-                if (intersection.size == 2) {
-                    println("FIVE")
+                val intersectionOfInputAndTopLeftMiddlePair =
+                    topLeftMiddlePair.intersect(input.toList().map { x -> x + "" })
+
+                if (intersectionOfInputAndTopLeftMiddlePair.size == 2) {
+                    // Must be a 5. We can now filter down the right side segments
                     bottom = bottom.filter { x -> input.contains(x) }
                     bottomRight = bottomRight.filter { x -> input.contains(x) }
                     topRight = topRight.filterNot { x -> input.contains(x) }
                 } else {
-                    val intersectionTwo = rightSide.intersect(input.toList().map { x -> x + "" })
-                    if (intersectionTwo.size == 2) {
-                        println("THREE")
+                    val intersectionOfInputAndRightSidePair =
+                        rightSidePair.intersect(input.toList().map { x -> x + "" })
+                    if (intersectionOfInputAndRightSidePair.size == 2) {
+                        // Must be a 3. We can now filter down the left side segments
                         middle = middle.filter { x -> input.contains(x) }
-                        topLeft = topLeftMiddle.filterNot { x -> input.contains(x) }
+                        topLeft = topLeftMiddlePair.filterNot { x -> input.contains(x) }
                         bottomLeft = bottomLeft.filterNot { x -> input.contains(x) }
                         bottom = bottom.filter { x -> input.contains(x) }
                     } else {
-                        println("TWO")
+                        // Must have been a 2
                     }
                 }
             }
         }
     }
 
-    println(top)
-    println(topLeft)
-    println(topRight)
-    println(middle)
-    println(bottomLeft)
-    println(bottomRight)
-    println(bottom)
-    println("-----")
 
+    fun convertToString(segments: List<List<String>>): String {
+        return segments.flatten().sorted().toString()
+    }
 
-    val zero = listOf(top, topLeft, topRight, bottomLeft, bottomRight, bottom).flatten().sorted().toString()
-    val one = listOf(topRight, bottomRight).flatten().sorted().toString()
-    val two = listOf(top, topRight, middle, bottomLeft, bottom).flatten().sorted().toString()
-    val three = listOf(top, topRight, middle, bottomRight, bottom).flatten().sorted().toString()
-    val four = listOf(topLeft, topRight, middle, bottomRight).flatten().sorted().toString()
-    val five = listOf(top, topLeft, middle, bottomRight, bottom).flatten().sorted().toString()
-    val six = listOf(top, topLeft, middle, bottomRight, bottomLeft, bottom).flatten().sorted().toString()
-    val seven = listOf(top, topRight, bottomRight).flatten().sorted().toString()
-    val eight = listOf(top, topLeft, topRight, middle, bottomRight, bottomLeft, bottom).flatten().sorted().toString()
-    val nine = listOf(top, topLeft, topRight, middle, bottomRight, bottom).flatten().sorted().toString()
-
-    val map = mapOf<String, Int>(
-        zero to 0,
-        one to 1,
-        two to 2,
-        three to 3,
-        four to 4,
-        five to 5,
-        six to 6,
-        seven to 7,
-        eight to 8,
-        nine to 9
+    val sortedStringToNumber = mapOf<String, Int>(
+        convertToString(listOf(top, topLeft, topRight, bottomLeft, bottomRight, bottom)) to 0,
+        convertToString(listOf(topRight, bottomRight)) to 1,
+        convertToString(listOf(top, topRight, middle, bottomLeft, bottom)) to 2,
+        convertToString(listOf(top, topRight, middle, bottomRight, bottom)) to 3,
+        convertToString(listOf(topLeft, topRight, middle, bottomRight)) to 4,
+        convertToString(listOf(top, topLeft, middle, bottomRight, bottom)) to 5,
+        convertToString(listOf(top, topLeft, middle, bottomRight, bottomLeft, bottom)) to 6,
+        convertToString(listOf(top, topRight, bottomRight)) to 7,
+        convertToString(listOf(top, topLeft, topRight, middle, bottomRight, bottomLeft, bottom)) to 8,
+        convertToString(listOf(top, topLeft, topRight, middle, bottomRight, bottom)) to 9
     )
 
 
-    val numbers = row.outputs.map { x ->
-        val y = x.toCharArray().sorted().toString()
-        map.getValue(y)
-    }
-
-    return numbers.map { x -> x.toString() }.joinToString("").toInt()
+    return row.outputs.map { x ->
+        val sortedOutputString = x.toCharArray().sorted().toString()
+        sortedStringToNumber.getValue(sortedOutputString)
+    }.joinToString("") { x -> x.toString() }.toInt()
 }
 
 fun main(arg: Array<String>) {
@@ -114,12 +122,11 @@ fun main(arg: Array<String>) {
     val lines: List<String> = File("src/main/kotlin/input08.txt").readLines()
 
     val answer = lines.map { x ->
+        val splitList = x.split("|")
+        Row(splitList.first().trim().split(" "), splitList.last().trim().split(" "))
+    }.sumOf { row -> calculateOutput(row) }
 
-        val list = x.split("|")
-        Row(list.first().trim().split(" "), list.last().trim().split(" "))
-    }.map { row -> calculateOutput(row) }
-
-    println(answer.sum())
+    println(answer)
 
 }
 
