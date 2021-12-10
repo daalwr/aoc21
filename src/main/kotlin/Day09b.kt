@@ -1,5 +1,10 @@
 import java.io.File
 
+/**
+ *  This is unnecessarily complex as I initially misinterpreted the puzzle.
+ *  But at least it works!
+ */
+
 fun onlyFlowsIntoBasin(
     grid: Array<Array<Int>>,
     x: Int,
