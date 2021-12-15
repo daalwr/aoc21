@@ -1,40 +1,25 @@
 import java.io.File
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 
 fun main(args: Array<String>) {
 
-    data class NodeDistance(val location: Pair<Int, Int>, val distance: Int)
+    fun calc() {
 
-    class DistanceComparator : Comparator<NodeDistance> {
-        override fun compare(a: NodeDistance, b: NodeDistance): Int {
-            return a.distance - b.distance;
+        data class NodeDistance(val location: Pair<Int, Int>, val distance: Int)
+
+        class DistanceComparator : Comparator<NodeDistance> {
+            override fun compare(a: NodeDistance, b: NodeDistance): Int {
+                return a.distance - b.distance;
+            }
         }
-    }
 
-    val lines: List<String> = File("src/main/kotlin/input15.txt").readLines()
-    val grid = lines.map { line -> line.toCharArray().map { c -> c.digitToInt() }.toTypedArray() }.toTypedArray()
+        val lines: List<String> = File("src/main/kotlin/input15.txt").readLines()
+        val grid = lines.map { line -> line.toCharArray().map { c -> c.digitToInt() }.toTypedArray() }.toTypedArray()
 
-    val width = grid[0].size
-    val height = grid.size
-
-    val visitedNodes = mutableSetOf<Pair<Int, Int>>()
-
-    val tentativeDistances = PriorityQueue<NodeDistance>(DistanceComparator())
-
-    tentativeDistances.add(NodeDistance(Pair(0, 0), 0))
-
-    while (true) {
-        val currentlyVisiting = tentativeDistances.poll()!!
-        visitedNodes.add(currentlyVisiting.location)
-
-        val x = currentlyVisiting.location.first
-        val y = currentlyVisiting.location.second
-
-        if (currentlyVisiting.location == Pair(width * 5 - 1, height * 5 - 1)) {
-            println(currentlyVisiting.distance)
-            return;
-        }
+        val width = grid[0].size
+        val height = grid.size
 
         fun calcScore(x: Int, y: Int): Int {
             val originalX = x % width
@@ -53,50 +38,77 @@ fun main(args: Array<String>) {
             return candidate
         }
 
-        // Right
-        if (x < width * 5 - 1 && !visitedNodes.contains(Pair(x + 1, y))) {
-            val currentEntry = tentativeDistances.firstOrNull { z -> z.location == Pair(x + 1, y) }
-            val newDistance = currentlyVisiting.distance + calcScore(x + 1, y)
+        val visitedNodes = mutableSetOf<Pair<Int, Int>>()
 
+        val tentativeDistances = PriorityQueue<NodeDistance>(DistanceComparator())
 
-            if (currentEntry == null || currentEntry.distance > newDistance) {
-                tentativeDistances.add(NodeDistance(Pair(x + 1, y), newDistance))
+        tentativeDistances.add(NodeDistance(Pair(0, 0), 0))
+
+        val scoresGrid = Array(height * 5) { x -> Array(width * 5) { y -> Int.MAX_VALUE } }
+
+        while (true) {
+            val currentlyVisiting = tentativeDistances.poll()!!
+            visitedNodes.add(currentlyVisiting.location)
+
+            val x = currentlyVisiting.location.first
+            val y = currentlyVisiting.location.second
+
+            if (currentlyVisiting.location == Pair(width * 5 - 1, height * 5 - 1)) {
+                println(currentlyVisiting.distance)
+                return;
             }
 
-        }
+            // Right
+            if (x < width * 5 - 1 && !visitedNodes.contains(Pair(x + 1, y))) {
+                val currentDistance = scoresGrid[y][x + 1]
+                val newDistance = currentlyVisiting.distance + calcScore(x + 1, y)
 
-        // Down
-        if (y < height * 5 - 1 && !visitedNodes.contains(Pair(x, y + 1))) {
-            val currentEntry = tentativeDistances.firstOrNull { z -> z.location == Pair(x, y + 1) }
-            val newDistance = currentlyVisiting.distance + calcScore(x, y + 1)
+                if (currentDistance > newDistance) {
+                    tentativeDistances.add(NodeDistance(Pair(x + 1, y), newDistance))
+                    scoresGrid[y][x + 1] = newDistance
+                }
 
-            if (currentEntry == null || currentEntry.distance > newDistance) {
-                tentativeDistances.add(NodeDistance(Pair(x, y + 1), newDistance))
             }
-        }
 
-        // Left
-        if (x > 0 && !visitedNodes.contains(Pair(x - 1, y))) {
-            val currentEntry = tentativeDistances.firstOrNull { z -> z.location == Pair(x - 1, y) }
-            val newDistance = currentlyVisiting.distance + calcScore(x - 1, y)
+            // Down
+            if (y < height * 5 - 1 && !visitedNodes.contains(Pair(x, y + 1))) {
+                val currentDistance = scoresGrid[y + 1][x]
+                val newDistance = currentlyVisiting.distance + calcScore(x, y + 1)
 
-            if (currentEntry == null || currentEntry.distance > newDistance) {
-                tentativeDistances.add(NodeDistance(Pair(x - 1, y), newDistance))
+                if (currentDistance > newDistance) {
+                    tentativeDistances.add(NodeDistance(Pair(x, y + 1), newDistance))
+                    scoresGrid[y + 1][x] = newDistance
+                }
             }
-        }
 
+            // Left
+            if (x > 0 && !visitedNodes.contains(Pair(x - 1, y))) {
+                val currentDistance = scoresGrid[y][x - 1]
+                val newDistance = currentlyVisiting.distance + calcScore(x - 1, y)
 
-        // Up
-        if (y > 0 && !visitedNodes.contains(Pair(x, y - 1))) {
-            val currentEntry = tentativeDistances.firstOrNull { z -> z.location == Pair(x, y - 1) }
-            val newDistance = currentlyVisiting.distance + calcScore(x, y - 1)
-
-            if (currentEntry == null || currentEntry.distance > newDistance) {
-                tentativeDistances.add(NodeDistance(Pair(x, y - 1), newDistance))
+                if (currentDistance > newDistance) {
+                    tentativeDistances.add(NodeDistance(Pair(x - 1, y), newDistance))
+                    scoresGrid[y][x - 1] = newDistance
+                }
             }
+
+
+            // Up
+            if (y > 0 && !visitedNodes.contains(Pair(x, y - 1))) {
+                val currentDistance = scoresGrid[y - 1][x]
+                val newDistance = currentlyVisiting.distance + calcScore(x, y - 1)
+
+                if (currentDistance > newDistance) {
+                    tentativeDistances.add(NodeDistance(Pair(x, y - 1), newDistance))
+                    scoresGrid[y - 1][x] = newDistance
+                }
+            }
+
         }
 
     }
+
+    calc()
 
 
 }
